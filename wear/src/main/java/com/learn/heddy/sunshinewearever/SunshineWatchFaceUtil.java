@@ -15,7 +15,7 @@ public class SunshineWatchFaceUtil {
     /* *
      * The path for the {@link DataItem} containing {@link DigitalWatchFaceService} configuration.
      */
-    public static final String PATH_SUNSHINE_WALLPAPER = "/sunshine";
+    public static final String PATH_SUNSHINE_WALLPAPER = "/sunshinewearever";
     public static final String IMAGE_KEY = "image";
     public static final String HIGH_LOW_KEY = "high_low";
     private static final int REQUEST_RESOLVE_ERROR = 1000;
@@ -32,8 +32,6 @@ public class SunshineWatchFaceUtil {
 
         mContext = context;
     }
-
-
 
     public static void setTodayData(String tempratureString, int wid){
         Log.d(TAG, "setTodayData()");

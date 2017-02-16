@@ -51,8 +51,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
     private static final String TAG = "SunshineWFService";
 
-
-
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create("sans-serif-light", Typeface.NORMAL);
     private static final Typeface BOLD_TYPEFACE =

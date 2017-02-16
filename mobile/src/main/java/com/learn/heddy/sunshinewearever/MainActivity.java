@@ -32,6 +32,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
 import com.learn.heddy.sunshinewearever.data.SunshinePreferences;
 import com.learn.heddy.sunshinewearever.data.WeatherContract;
 import com.learn.heddy.sunshinewearever.sync.SunshineSyncUtils;
@@ -79,6 +85,14 @@ public class MainActivity extends AppCompatActivity  implements
 
     private ProgressBar mLoadingIndicator;
 
+    /*
+        WatchFace code added by hyeryung park 2/16/2017
+     */
+    private static final String SUNSHINE_PATH = "/sunshinewearever";
+
+    private static final String IMAGE_KEY = "image";
+    private static final String HIGH_LOW_KEY = "high_low";
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,6 +168,13 @@ public class MainActivity extends AppCompatActivity  implements
 
         SunshineSyncUtils.initialize(this);
 
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(Wearable.API)
+//                .addConnectionCallbacks(this)
+//                .addOnConnectionFailedListener(this)
+                .build();
+
+        mGoogleApiClient.connect();
     }
 
     /**
@@ -239,7 +260,10 @@ public class MainActivity extends AppCompatActivity  implements
         mForecastAdapter.swapCursor(data);
         if (mPosition == RecyclerView.NO_POSITION) mPosition = 0;
         mRecyclerView.smoothScrollToPosition(mPosition);
-        if (data.getCount() != 0) showWeatherDataView();
+        if (data.getCount() != 0){
+            showWeatherDataView();
+            watchFaceDataForToday(data);
+        }
     }
 
     /**
@@ -343,4 +367,43 @@ public class MainActivity extends AppCompatActivity  implements
 
         return super.onOptionsItemSelected(item);
     }
+
+
+    /*
+    Watch Face coding:
+     */
+    private void watchFaceDataForToday(Cursor data){
+        if (data!=null){
+            data.moveToFirst(); // sort order was ASCENDING, Today's data is at the first one
+            int mImageId = data.getInt(INDEX_WEATHER_CONDITION_ID);
+            float weather_high_degree = data.getFloat(INDEX_WEATHER_MAX_TEMP);
+            float weather_low_degree = data.getFloat(INDEX_WEATHER_MIN_TEMP);
+            String mHigh_low = weather_high_degree + " " + weather_low_degree;
+
+            Log.d(TAG, "Sunshine tempatures: High "+weather_high_degree + " Low: "+weather_low_degree);
+
+            if (mGoogleApiClient.isConnected()){
+                Log.d(TAG, "google connected");
+            }
+
+            PutDataMapRequest dataMap = PutDataMapRequest.create(SUNSHINE_PATH);
+            //dataMap.getDataMap().putAsset(IMAGE_KEY, asset);
+
+            dataMap.getDataMap().putString(HIGH_LOW_KEY, mHigh_low);
+            dataMap.getDataMap().putInt(IMAGE_KEY, mImageId);
+
+            PutDataRequest request = dataMap.asPutDataRequest();
+            request.setUrgent();
+
+            Wearable.DataApi.putDataItem(mGoogleApiClient, request)
+                    .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                        @Override
+                        public void onResult(DataApi.DataItemResult dataItemResult) {
+                            Log.d(TAG, "Sending weather WFace was successful: " + dataItemResult.getStatus()
+                                    .isSuccess());
+                        }
+                    });
+        }
+    }
+
 }
