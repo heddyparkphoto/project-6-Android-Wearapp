@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -391,25 +392,21 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         private void drawSunshineData(Canvas canvas, long currentTimeMillis) {
             Log.d(TAG, "drawSunshineData()");
 
-            String high_low = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
-            if (high_low == null) {
-                high_low = "high and low";
+            Bitmap weatherImage=null;
+            String high_low = "high and low";
+            SunshineWatchFaceUtil.TodayData sunshineData = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
+            if (sunshineData!=null) {
+                weatherImage = sunshineData.getWeatherImage();
+                high_low = sunshineData.getHigh_low();
             }
 
-
-            int WeatherDataX = 10;    // TO-DO: better adjust later!
+            int weatherDataX = 30;    // TO-DO: better adjust later!
 
             mWeatherDataY = mHorizontalMargin*2 + new Float(mCenterY).intValue();
-
-//                if (bitmap!=null) {
-//                    canvas.drawBitmap(bitmap, complicationsX, mComplicationsY, null);
-//
-//                    complicationsX += 50;
-//                }
-
-//                CharSequence complicationMessage =
-//                        high_low.getText(getApplicationContext(), currentTimeMillis);
-
+            if (weatherImage!=null) {
+                canvas.drawBitmap(weatherImage, weatherDataX, mWeatherDataY, null);
+                weatherDataX += 150;
+            }
 
             double textWidth =
                     mWeatherDataPaint.measureText(
@@ -421,10 +418,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     high_low,
                     0,
                     high_low.length(),
-                    WeatherDataX,
-                    mWeatherDataY,
+                    weatherDataX,
+                    mWeatherDataY + 100,
                     mWeatherDataPaint);
-
         }
 
         private String formatTwoDigitNumber(int hour) {

@@ -16,7 +16,10 @@
 package com.learn.heddy.sunshinewearever;
 
 import android.content.Intent;
+import android.content.res.Resources;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.LoaderManager;
@@ -34,6 +37,7 @@ import android.widget.ProgressBar;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
+import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataApi;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
@@ -41,6 +45,10 @@ import com.google.android.gms.wearable.Wearable;
 import com.learn.heddy.sunshinewearever.data.SunshinePreferences;
 import com.learn.heddy.sunshinewearever.data.WeatherContract;
 import com.learn.heddy.sunshinewearever.sync.SunshineSyncUtils;
+import com.learn.heddy.sunshinewearever.utilities.SunshineWeatherUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity  implements
         LoaderManager.LoaderCallbacks<Cursor>,
@@ -92,6 +100,8 @@ public class MainActivity extends AppCompatActivity  implements
 
     private static final String IMAGE_KEY = "image";
     private static final String HIGH_LOW_KEY = "high_low";
+    private static final String BITMAP_KEY = "bitmap";
+
     private GoogleApiClient mGoogleApiClient;
 
     @Override
@@ -378,7 +388,8 @@ public class MainActivity extends AppCompatActivity  implements
             int mImageId = data.getInt(INDEX_WEATHER_CONDITION_ID);
             float weather_high_degree = data.getFloat(INDEX_WEATHER_MAX_TEMP);
             float weather_low_degree = data.getFloat(INDEX_WEATHER_MIN_TEMP);
-            String mHigh_low = weather_high_degree + " " + weather_low_degree;
+            String mHigh_low = SunshineWeatherUtils.formatTemperature(this,weather_high_degree)
+                    + " " + SunshineWeatherUtils.formatTemperature(this,weather_low_degree);
 
             Log.d(TAG, "Sunshine tempatures: High "+weather_high_degree + " Low: "+weather_low_degree);
 
@@ -386,9 +397,26 @@ public class MainActivity extends AppCompatActivity  implements
                 Log.d(TAG, "google connected");
             }
 
-            PutDataMapRequest dataMap = PutDataMapRequest.create(SUNSHINE_PATH);
-            //dataMap.getDataMap().putAsset(IMAGE_KEY, asset);
+            // prep weather image
+            Resources resources = this.getResources();
+            int largeArtResourceId = SunshineWeatherUtils
+                    .getLargeArtResourceIdForWeatherCondition(mImageId);
+            int smallResourceId = SunshineWeatherUtils
+                    .getSmallArtResourceIdForWeatherCondition(mImageId);
 
+            Log.d(TAG, "weather_id: " + mImageId + " largeId: "+largeArtResourceId
+                + " desc " + SunshineWeatherUtils
+                    .getStringForWeatherCondition(this, mImageId));
+
+
+            Bitmap largeIcon = BitmapFactory.decodeResource(
+                    resources,
+                    smallResourceId);
+
+            PutDataMapRequest dataMap = PutDataMapRequest.create(SUNSHINE_PATH);
+            if (largeIcon!=null) {
+                dataMap.getDataMap().putAsset(BITMAP_KEY, toAsset(largeIcon));
+            }
             dataMap.getDataMap().putString(HIGH_LOW_KEY, mHigh_low);
             dataMap.getDataMap().putInt(IMAGE_KEY, mImageId);
 
@@ -403,6 +431,29 @@ public class MainActivity extends AppCompatActivity  implements
                                     .isSuccess());
                         }
                     });
+        }
+    }
+
+    /**
+     * Builds an {@link com.google.android.gms.wearable.Asset} from a bitmap. The image that we get
+     * back from the camera in "data" is a thumbnail size. Typically, your image should not exceed
+     * 320x320 and if you want to have zoom and parallax effect in your app, limit the size of your
+     * image to 640x400. Resize your image before transferring to your wearable device.
+     */
+    private static Asset toAsset(Bitmap bitmap) {
+        ByteArrayOutputStream byteStream = null;
+        try {
+            byteStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, byteStream);
+            return Asset.createFromBytes(byteStream.toByteArray());
+        } finally {
+            if (null != byteStream) {
+                try {
+                    byteStream.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
         }
     }
 

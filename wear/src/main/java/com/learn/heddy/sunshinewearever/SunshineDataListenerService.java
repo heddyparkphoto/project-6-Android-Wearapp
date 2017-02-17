@@ -1,10 +1,14 @@
 package com.learn.heddy.sunshinewearever;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.data.FreezableUtils;
+import com.google.android.gms.wearable.Asset;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataMap;
@@ -12,9 +16,11 @@ import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.wearable.WearableListenerService;
 
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.BITMAP_KEY;
 import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.HIGH_LOW_KEY;
 import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.IMAGE_KEY;
 
@@ -25,6 +31,7 @@ import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.IMAGE_KEY;
 public class SunshineDataListenerService extends WearableListenerService
 {
     private static final String TAG = "SunshineDataListener";
+    GoogleApiClient mGoogleApiClient;
 
     @Override
     public void onDataChanged(DataEventBuffer dataEventBuffer) {
@@ -33,12 +40,12 @@ public class SunshineDataListenerService extends WearableListenerService
         final List<DataEvent> freezableLocalizedData = FreezableUtils
                 .freezeIterable(dataEventBuffer);
 
-        GoogleApiClient googleApiClient = new GoogleApiClient.Builder(this)
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
 
         ConnectionResult connectionResult =
-                googleApiClient.blockingConnect(30, TimeUnit.SECONDS);
+                mGoogleApiClient.blockingConnect(30, TimeUnit.SECONDS);
 
         if (!connectionResult.isSuccess()) {
             Log.e(TAG, "Failed to connect to GoogleApiClient.");
@@ -57,7 +64,17 @@ public class SunshineDataListenerService extends WearableListenerService
                     DataMap dataMap = dataMapItem.getDataMap();
                     String high_low = dataMap.getString(HIGH_LOW_KEY);
                     int imageId = dataMap.getInt(IMAGE_KEY);
-                    SunshineWatchFaceUtil.setTodayData(high_low, imageId);
+                    Asset bitmapAsset = dataMapItem.getDataMap()
+                            .getAsset(BITMAP_KEY);
+                    LoadBitmapAsyncTask asyncTask = (LoadBitmapAsyncTask)new LoadBitmapAsyncTask().execute(bitmapAsset);
+                    Bitmap weatherImage = null;
+                    try {
+                        weatherImage = asyncTask.get();
+                    } catch (Exception allEx) {
+                        Log.e(TAG, " LoadBitmapAsyncTask async task exception " + allEx);
+                    }
+
+                    SunshineWatchFaceUtil.setTodayData(high_low, imageId, weatherImage);
                 } else {
                     Log.w(TAG, "Unknown URI path: " + path);
                 }
@@ -66,4 +83,29 @@ public class SunshineDataListenerService extends WearableListenerService
         }
     }
 
+    /*
+     * Extracts {@link android.graphics.Bitmap} data from the
+     * {@link com.google.android.gms.wearable.Asset}
+     */
+    private class LoadBitmapAsyncTask extends AsyncTask<Asset, Void, Bitmap> {
+
+        @Override
+        protected Bitmap doInBackground(Asset... params) {
+            if (params.length > 0) {
+                Asset asset = params[0];
+
+                InputStream assetInputStream = Wearable.DataApi.getFdForAsset(
+                        mGoogleApiClient, asset).await().getInputStream();
+
+                if (assetInputStream == null) {
+                    Log.w(TAG, "Requested an unknown Asset.");
+                    return null;
+                }
+                return BitmapFactory.decodeStream(assetInputStream);
+            } else {
+                Log.e(TAG, "Asset must be non-null");
+                return null;
+            }
+        }
+    }
 }

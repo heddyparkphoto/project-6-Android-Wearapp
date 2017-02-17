@@ -1,8 +1,8 @@
 package com.learn.heddy.sunshinewearever;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
-import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 
@@ -18,10 +18,11 @@ public class SunshineWatchFaceUtil {
     public static final String PATH_SUNSHINE_WALLPAPER = "/sunshinewearever";
     public static final String IMAGE_KEY = "image";
     public static final String HIGH_LOW_KEY = "high_low";
-    private static final int REQUEST_RESOLVE_ERROR = 1000;
+    public static final String BITMAP_KEY = "bitmap";
 
     private static String mHigh_low;
     private static int mImageId;
+    private static Bitmap mBitmap;
 
     public Icon weather_condition_icon;
     private GoogleApiClient mGoogleApiClient;
@@ -33,16 +34,36 @@ public class SunshineWatchFaceUtil {
         mContext = context;
     }
 
-    public static void setTodayData(String tempratureString, int wid){
-        Log.d(TAG, "setTodayData()");
-
-//        weather_condition_icon = icon;
+    public static void setTodayData(String tempratureString, int wid, Bitmap wBitmap){
         mHigh_low = tempratureString;
         mImageId = wid;
+        mBitmap = wBitmap;
     }
 
+    public static TodayData fetchSunshineData(Context context){
+        return new TodayData(mHigh_low, mBitmap);
+    }
 
-    public static String fetchSunshineData(Context context){
-        return mHigh_low;
+    public static class TodayData {
+
+        private String high_low;
+        private Bitmap weatherImage;
+
+        public TodayData(){
+            super();
+        }
+
+        public TodayData(String high_low, Bitmap image){
+            this.high_low = high_low;
+            this.weatherImage = image;
+        }
+
+        public String getHigh_low(){
+            return high_low;
+        }
+
+        public Bitmap getWeatherImage(){
+            return weatherImage;
+        }
     }
 }
