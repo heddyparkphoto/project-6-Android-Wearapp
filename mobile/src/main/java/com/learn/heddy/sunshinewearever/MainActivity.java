@@ -98,7 +98,6 @@ public class MainActivity extends AppCompatActivity  implements
      */
     private static final String SUNSHINE_PATH = "/sunshinewearever";
 
-    private static final String IMAGE_KEY = "image";
     private static final String HIGH_LOW_KEY = "high_low";
     private static final String BITMAP_KEY = "bitmap";
 
@@ -388,8 +387,9 @@ public class MainActivity extends AppCompatActivity  implements
             int mImageId = data.getInt(INDEX_WEATHER_CONDITION_ID);
             float weather_high_degree = data.getFloat(INDEX_WEATHER_MAX_TEMP);
             float weather_low_degree = data.getFloat(INDEX_WEATHER_MIN_TEMP);
-            String mHigh_low = SunshineWeatherUtils.formatTemperature(this,weather_high_degree)
-                    + " " + SunshineWeatherUtils.formatTemperature(this,weather_low_degree);
+            String mHigh_low = SunshineWeatherUtils.formatHighLows(this,weather_high_degree,weather_low_degree);
+//                    SunshineWeatherUtils.formatTemperature(this,weather_high_degree)
+//                    + " " + SunshineWeatherUtils.formatTemperature(this,weather_low_degree);
 
             Log.d(TAG, "Sunshine tempatures: High "+weather_high_degree + " Low: "+weather_low_degree);
 
@@ -399,15 +399,12 @@ public class MainActivity extends AppCompatActivity  implements
 
             // prep weather image
             Resources resources = this.getResources();
-            int largeArtResourceId = SunshineWeatherUtils
-                    .getLargeArtResourceIdForWeatherCondition(mImageId);
             int smallResourceId = SunshineWeatherUtils
                     .getSmallArtResourceIdForWeatherCondition(mImageId);
 
-            Log.d(TAG, "weather_id: " + mImageId + " largeId: "+largeArtResourceId
+            Log.d(TAG, "weather_id: " + mImageId + " smallId: "+smallResourceId
                 + " desc " + SunshineWeatherUtils
                     .getStringForWeatherCondition(this, mImageId));
-
 
             Bitmap largeIcon = BitmapFactory.decodeResource(
                     resources,
@@ -418,7 +415,6 @@ public class MainActivity extends AppCompatActivity  implements
                 dataMap.getDataMap().putAsset(BITMAP_KEY, toAsset(largeIcon));
             }
             dataMap.getDataMap().putString(HIGH_LOW_KEY, mHigh_low);
-            dataMap.getDataMap().putInt(IMAGE_KEY, mImageId);
 
             PutDataRequest request = dataMap.asPutDataRequest();
             request.setUrgent();

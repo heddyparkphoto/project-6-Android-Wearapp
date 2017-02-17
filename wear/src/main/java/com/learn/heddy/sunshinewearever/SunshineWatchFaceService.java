@@ -139,6 +139,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         java.text.DateFormat mDateFormat;
 
         private Paint mWeatherDataPaint;
+        private Paint mWeatherDataPaintMuted;
         private int mWeatherDataY;
         private int mHorizontalMargin = 15;  //TODO: add to dimens
 
@@ -200,6 +201,14 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mWeatherDataPaint.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
 //            mWeatherDataPaint.setTextAlign(Paint.Align.CENTER);
             mWeatherDataPaint.setAntiAlias(true);
+
+            mWeatherDataPaintMuted = new Paint();
+            mWeatherDataPaintMuted.setColor(Color.argb(180, 255, 0, 255));
+            mWeatherDataPaintMuted.setTextSize(WEATHER_DATA_TEXT_SIZE);
+            mWeatherDataPaintMuted.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+//            mWeatherDataPaintMuted.setTextAlign(Paint.Align.CENTER);
+            mWeatherDataPaintMuted.setAntiAlias(true);
+
         }
 
         @Override
@@ -385,7 +394,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             float halfLength = 50f;
             canvas.drawLine(mCenterX-halfLength, mCenterY, mCenterX+halfLength, mCenterY, mCenterLine);
 
-            //drawSunshineComplications(canvas, now);
             drawSunshineData(canvas, now);
         }
 
@@ -393,35 +401,53 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             Log.d(TAG, "drawSunshineData()");
 
             Bitmap weatherImage=null;
-            String high_low = "high and low";
+            Bitmap scaledWeatherImage = null;
+            String highOnly = "High";
+            String lowOnly = "Low";
+
+            int h = 0;
+
             SunshineWatchFaceUtil.TodayData sunshineData = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
             if (sunshineData!=null) {
                 weatherImage = sunshineData.getWeatherImage();
-                high_low = sunshineData.getHigh_low();
-            }
+                if (weatherImage!=null){
+                    int w = Math.round(weatherImage.getWidth()*.75f);
+                    h = Math.round(weatherImage.getHeight()*.75f);
 
-            int weatherDataX = 30;    // TO-DO: better adjust later!
+                    scaledWeatherImage = weatherImage.createScaledBitmap(weatherImage, w, h, false);
+                }
+
+                highOnly = sunshineData.getHighOnly()!=null? sunshineData.getHighOnly(): "#2: High";
+                lowOnly = sunshineData.getLowOnly()!=null? sunshineData.getLowOnly(): "#2: Low";
+           }
+
+            int weatherDataX = 100;    // TO-DO: better adjust later!
 
             mWeatherDataY = mHorizontalMargin*2 + new Float(mCenterY).intValue();
-            if (weatherImage!=null) {
-                canvas.drawBitmap(weatherImage, weatherDataX, mWeatherDataY, null);
-                weatherDataX += 150;
+
+            if (scaledWeatherImage!=null) {
+                canvas.drawBitmap(scaledWeatherImage, weatherDataX, mWeatherDataY, null);
+                weatherDataX += 110;
             }
 
-            double textWidth =
-                    mWeatherDataPaint.measureText(
-                            high_low,
-                            0,
-                            high_low.length());
-            //complicationsX = (int) ((mWidth / 2) - textWidth) / 2;
             canvas.drawText(
-                    high_low,
+                    highOnly,
                     0,
-                    high_low.length(),
+                    highOnly.length(),
                     weatherDataX,
-                    mWeatherDataY + 100,
+                    mWeatherDataY += h/2,
                     mWeatherDataPaint);
-        }
+
+            canvas.drawText(
+                    lowOnly,
+                    0,
+                    lowOnly.length(),
+                    weatherDataX + 60,
+                    mWeatherDataY,
+                    mWeatherDataPaintMuted);
+    }
+
+
 
         private String formatTwoDigitNumber(int hour) {
             return String.format("%02d", hour);

@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.BITMAP_KEY;
 import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.HIGH_LOW_KEY;
-import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.IMAGE_KEY;
 
 /**
  * Created by hyeryungpark on 2/16/17.
@@ -63,7 +62,6 @@ public class SunshineDataListenerService extends WearableListenerService
                     DataMapItem dataMapItem = DataMapItem.fromDataItem(event.getDataItem());
                     DataMap dataMap = dataMapItem.getDataMap();
                     String high_low = dataMap.getString(HIGH_LOW_KEY);
-                    int imageId = dataMap.getInt(IMAGE_KEY);
                     Asset bitmapAsset = dataMapItem.getDataMap()
                             .getAsset(BITMAP_KEY);
                     LoadBitmapAsyncTask asyncTask = (LoadBitmapAsyncTask)new LoadBitmapAsyncTask().execute(bitmapAsset);
@@ -74,7 +72,7 @@ public class SunshineDataListenerService extends WearableListenerService
                         Log.e(TAG, " LoadBitmapAsyncTask async task exception " + allEx);
                     }
 
-                    SunshineWatchFaceUtil.setTodayData(high_low, imageId, weatherImage);
+                    SunshineWatchFaceUtil.setTodayData(high_low, weatherImage);
                 } else {
                     Log.w(TAG, "Unknown URI path: " + path);
                 }

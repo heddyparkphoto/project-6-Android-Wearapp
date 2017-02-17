@@ -2,9 +2,6 @@ package com.learn.heddy.sunshinewearever;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.drawable.Icon;
-
-import com.google.android.gms.common.api.GoogleApiClient;
 
 /**
  * Created by hyeryungpark on 2/16/17.
@@ -16,52 +13,70 @@ public class SunshineWatchFaceUtil {
      * The path for the {@link DataItem} containing {@link DigitalWatchFaceService} configuration.
      */
     public static final String PATH_SUNSHINE_WALLPAPER = "/sunshinewearever";
-    public static final String IMAGE_KEY = "image";
     public static final String HIGH_LOW_KEY = "high_low";
     public static final String BITMAP_KEY = "bitmap";
 
-    private static String mHigh_low;
-    private static int mImageId;
+    private static String mHigh;
+    private static String mLow;
     private static Bitmap mBitmap;
 
-    public Icon weather_condition_icon;
-    private GoogleApiClient mGoogleApiClient;
     private Context mContext;
 
     public SunshineWatchFaceUtil(Context context){
         super();
-
         mContext = context;
     }
 
-    public static void setTodayData(String tempratureString, int wid, Bitmap wBitmap){
-        mHigh_low = tempratureString;
-        mImageId = wid;
+    public static void setTodayData(String tempratureString, Bitmap wBitmap){
+        int idx = 0;
+        int len = 0;
+
+        if (tempratureString!=null) {
+            len = tempratureString.length();
+            if ((idx = tempratureString.indexOf("/")) > -1) {
+                mHigh = tempratureString.substring(0, idx);
+                if (len > idx) {
+                    mLow = tempratureString.substring(idx + 1);
+                }
+            }
+        }
         mBitmap = wBitmap;
     }
 
     public static TodayData fetchSunshineData(Context context){
-        return new TodayData(mHigh_low, mBitmap);
+        return new TodayData(mHigh, mLow, mBitmap);
     }
 
     public static class TodayData {
 
-        private String high_low;
+        private String high;
+        private String low;
+
         private Bitmap weatherImage;
 
         public TodayData(){
             super();
         }
 
-        public TodayData(String high_low, Bitmap image){
-            this.high_low = high_low;
+        public TodayData(String hi, String lo, Bitmap image){
+            this.high = hi;
+            this.low = lo;
             this.weatherImage = image;
         }
 
-        public String getHigh_low(){
-            return high_low;
+        public String getHighOnly(){
+            if (high!=null){
+                high.trim();
+            }
+            return high;
         }
 
+        public String getLowOnly(){
+            if (low!=null){
+                low.trim();
+            }
+            return low;
+        }
         public Bitmap getWeatherImage(){
             return weatherImage;
         }
