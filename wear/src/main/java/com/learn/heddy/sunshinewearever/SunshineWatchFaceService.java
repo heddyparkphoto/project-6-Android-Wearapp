@@ -143,6 +143,13 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         private int mWeatherDataY;
         private int mHorizontalMargin = 15;  //TODO: add to dimens
 
+        /* test better x and y */
+        private float mHourXoffset;
+        private float mDateXoffset;
+        private float mWeatherDataXoffset;
+        private float m_yLine3;
+        private float m_ySixteenth;
+
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -160,7 +167,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     .build());
             Resources resources = SunshineWatchFaceService.this.getResources();
 
-//            mYOffset = resources.getDimension(R.dimen.digital_y_offset);
             /* Values from WatchFace sample project */
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
             mLineHeight = resources.getDimension(R.dimen.digital_line_height);
@@ -198,14 +204,16 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mWeatherDataPaint = new Paint();
             mWeatherDataPaint.setColor(Color.MAGENTA);
             mWeatherDataPaint.setTextSize(WEATHER_DATA_TEXT_SIZE);
-            mWeatherDataPaint.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+//            mWeatherDataPaint.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+            mWeatherDataPaint.setTypeface(NORMAL_TYPEFACE);
 //            mWeatherDataPaint.setTextAlign(Paint.Align.CENTER);
             mWeatherDataPaint.setAntiAlias(true);
 
             mWeatherDataPaintMuted = new Paint();
             mWeatherDataPaintMuted.setColor(Color.argb(180, 255, 0, 255));
             mWeatherDataPaintMuted.setTextSize(WEATHER_DATA_TEXT_SIZE);
-            mWeatherDataPaintMuted.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+//            mWeatherDataPaintMuted.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+            mWeatherDataPaintMuted.setTypeface(NORMAL_TYPEFACE);
 //            mWeatherDataPaintMuted.setTextAlign(Paint.Align.CENTER);
             mWeatherDataPaintMuted.setAntiAlias(true);
 
@@ -230,7 +238,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             Paint paint = new Paint();
             paint.setColor(defaultInteractiveColor);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(5f);
+            paint.setStrokeWidth(4f);
             paint.setAntiAlias(true);
             return paint;
         }
@@ -285,18 +293,17 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             /* */
             mXOffset = resources.getDimension(isRound
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
+            mYOffset = resources.getDimension(isRound
+                    ? R.dimen.digital_y_offset_round : R.dimen.digital_y_offset);
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
 
-            mDatePaint.setTextSize(resources.getDimension(R.dimen.digital_date_text_size));
+            mDatePaint.setTextSize(resources.getDimension(R.dimen.digital_date_text_size)); // Date has the same size for both insets
             mHourPaint.setTextSize(textSize);
             mMinutePaint.setTextSize(textSize);
             mColonPaint.setTextSize(textSize);
 
             mColonWidth = mColonPaint.measureText(COLON_STRING);
-            mTextPaint.setTextSize(textSize);
-
-            mColonWidth = mTextPaint.measureText(COLON_STRING);
         }
 
         @Override
@@ -313,11 +320,17 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
+
             super.onAmbientModeChanged(inAmbientMode);
+
             if (mAmbient != inAmbientMode) {
                 mAmbient = inAmbientMode;
                 if (mLowBitAmbient) {
-                    mTextPaint.setAntiAlias(!inAmbientMode);
+                    boolean antiAlias = !inAmbientMode;
+                    mDatePaint.setAntiAlias(antiAlias);
+                    mHourPaint.setAntiAlias(antiAlias);
+                    mMinutePaint.setAntiAlias(antiAlias);
+                    mColonPaint.setAntiAlias(antiAlias);
                 }
                 invalidate();
             }
@@ -335,6 +348,11 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             } else {
                 canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
+
+            mHeight = bounds.height();
+            mCenterY = mHeight/2f;
+            mWidth = bounds.width();
+            mCenterX = mWidth/2f;
 
             // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
             long now = System.currentTimeMillis();
@@ -361,36 +379,63 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 }
                 hourString = String.valueOf(hour);
             }
-            canvas.drawText(hourString, x, mYOffset, mHourPaint);       //mHourPaint);
-            x += mHourPaint.measureText(hourString);
+
+            float hlen = mHourPaint.measureText(hourString);
+            float clen = mColonWidth;
+            String minuteString = formatTwoDigitNumber(mCalendar.get(Calendar.MINUTE));
+            float mlen = mMinutePaint.measureText(minuteString);
+            m_ySixteenth = mHeight*1/16;
+            float yLine1 = mHeight/4+m_ySixteenth;
+            float yLine2 = mHeight*3/8+m_ySixteenth;
+            m_yLine3 = mHeight*3/4; //+ySixteenth;
+            String allTime = hourString.concat(COLON_STRING).concat(minuteString);
+
+            mHourXoffset = (mWidth - (hlen+clen+mlen))/2;
+
+            Log.d(TAG, "mWidth: "+ mWidth + " hour_col_min "+(hlen+clen+mlen)+" mHourXoffset" + mHourXoffset);
+
+//            canvas.drawText(hourString, x, mYOffset, mHourPaint);       //mHourPaint);
+//            canvas.drawText(hourString, mHourXoffset, yLine1, mHourPaint);
+            canvas.drawText(allTime, mHourXoffset, yLine1, mHourPaint);
+
+//            x += mHourPaint.measureText(hourString);
+//            float colonXoffset = mHourXoffset+hlen;
 
             // In ambient and mute modes, always draw the first colon. Otherwise, draw the
             // first colon for the first half of each second.
 //            if (isInAmbientMode()) {                                   // || mMute || mShouldDrawColons) {
-                canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
+//                canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
 //            }
-            x += mColonWidth;
+
+//            canvas.drawText(COLON_STRING, colonXoffset, yLine1, mColonPaint);
+//
+//            x += mColonWidth;
+//            float minuteXoffset = colonXoffset + mColonWidth;
 
             // Draw the minutes.
-            String minuteString = formatTwoDigitNumber(mCalendar.get(Calendar.MINUTE));
-            canvas.drawText(minuteString, x, mYOffset, mMinutePaint);          //mMinutePaint);
-            x += mMinutePaint.measureText(minuteString);
+//            String minuteString = formatTwoDigitNumber(mCalendar.get(Calendar.MINUTE));
+//            canvas.drawText(minuteString, x, mYOffset, mMinutePaint);          //mMinutePaint);
+//            canvas.drawText(minuteString, minuteXoffset, yLine1, mMinutePaint);
+//            x += mMinutePaint.measureText(minuteString);
 
             // Only render the day of week and date if there is no peek card, so they do not bleed
             // into each other in ambient mode.
             if (getPeekCardPosition().isEmpty()) {
                 // Day of week
                 String dayString = mDayOfWeekFormat.format(mDate);
+
+                mWeatherDataXoffset = (mWidth - mDatePaint.measureText(dayString))/2;
                 canvas.drawText(
                         dayString,
-                        mXOffset, mYOffset + mLineHeight, mDatePaint);                   //mDatePaint);
+//                        mXOffset, mYOffset + mLineHeight, mDatePaint);                   //mDatePaint);
+                        mWeatherDataXoffset, yLine2, mDatePaint);
             }
 
             // horizonatal line separator
-            mHeight = bounds.height();
-            mCenterY = mHeight/2f;
-            mWidth = bounds.width();
-            mCenterX = mWidth/2f;
+//            mHeight = bounds.height();
+//            mCenterY = mHeight/2f;
+//            mWidth = bounds.width();
+//            mCenterX = mWidth/2f;
             float halfLength = 50f;
             canvas.drawLine(mCenterX-halfLength, mCenterY, mCenterX+halfLength, mCenterY, mCenterLine);
 
@@ -406,15 +451,18 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             String lowOnly = "Low";
 
             int h = 0;
+            float iLen = 0f;
+            float spaceLen = 12f;
 
             SunshineWatchFaceUtil.TodayData sunshineData = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
             if (sunshineData!=null) {
                 weatherImage = sunshineData.getWeatherImage();
                 if (weatherImage!=null){
-                    int w = Math.round(weatherImage.getWidth()*.75f);
-                    h = Math.round(weatherImage.getHeight()*.75f);
+                    int w = Math.round(weatherImage.getWidth()*.5f);
+                    h = Math.round(weatherImage.getHeight()*.5f);
 
                     scaledWeatherImage = weatherImage.createScaledBitmap(weatherImage, w, h, false);
+                    iLen = scaledWeatherImage.getWidth();
                 }
 
                 highOnly = sunshineData.getHighOnly()!=null? sunshineData.getHighOnly(): "#2: High";
@@ -425,25 +473,44 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             mWeatherDataY = mHorizontalMargin*2 + new Float(mCenterY).intValue();
 
+//            float allWeatherLen = iLen
+//                    + mWeatherDataPaint.measureText(highOnly)
+//                    + mWeatherDataPaintMuted.measureText(lowOnly)
+//                    ;
+
+            float allWeatherLen = iLen
+                    + mWeatherDataPaint.measureText(highOnly)
+//                    + mWeatherDataPaintMuted.measureText(lowOnly)
+                    + spaceLen*6
+                    ;
+
+            mWeatherDataXoffset = (mWidth-allWeatherLen)/2;
+            Log.d(TAG, "iLen: "+ iLen + " highOnly "+mWeatherDataPaint.measureText(highOnly)+" xOffset " + mWeatherDataXoffset);
+
             if (scaledWeatherImage!=null) {
-                canvas.drawBitmap(scaledWeatherImage, weatherDataX, mWeatherDataY, null);
-                weatherDataX += 110;
+//                canvas.drawBitmap(scaledWeatherImage, weatherDataX, mWeatherDataY, null);
+//                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, m_yLine3, null);
+                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, mCenterY+m_ySixteenth, null);
+                mWeatherDataXoffset = mWeatherDataXoffset + spaceLen + scaledWeatherImage.getWidth();
             }
 
             canvas.drawText(
                     highOnly,
-                    0,
-                    highOnly.length(),
-                    weatherDataX,
-                    mWeatherDataY += h/2,
+//                    0,
+//                    highOnly.length(),
+                    mWeatherDataXoffset,
+//                    mWeatherDataY += h/2,
+                    m_yLine3,
                     mWeatherDataPaint);
 
             canvas.drawText(
                     lowOnly,
-                    0,
-                    lowOnly.length(),
-                    weatherDataX + 60,
-                    mWeatherDataY,
+//                    0,
+//                    lowOnly.length(),
+//                    weatherDataX + 60,
+//                    mWeatherDataY,
+                    mWeatherDataXoffset + spaceLen*2 + mWeatherDataPaint.measureText(highOnly)/2,
+                    m_yLine3,
                     mWeatherDataPaintMuted);
     }
 
