@@ -97,6 +97,11 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine {
+
+        private int DEFAULT_FACE_10 = 10;
+        private int realWidth = DEFAULT_FACE_10;
+        private int realHeight = DEFAULT_FACE_10;
+
         private static final float WEATHER_DATA_TEXT_SIZE = 38f;
         private final String COLON_STRING = ":";
         final Handler mUpdateTimeHandler = new EngineHandler(this);
@@ -442,6 +447,8 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             drawSunshineData(canvas, now);
         }
 
+
+
         private void drawSunshineData(Canvas canvas, long currentTimeMillis) {
             Log.d(TAG, "drawSunshineData()");
 
@@ -458,12 +465,21 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             if (sunshineData!=null) {
                 weatherImage = sunshineData.getWeatherImage();
                 if (weatherImage!=null){
-                    int w = Math.round(weatherImage.getWidth()*.5f);
-                    h = Math.round(weatherImage.getHeight()*.5f);
+                    Log.d(TAG, "drawSunshineData() inside image REAL W: " + realWidth + " REAL H: " + realHeight);
+                    float resolutionFactor = ((float) realWidth)/280f; // My device width goal of 280dp e.g. 480f/ 280f
+                    float scale = resolutionFactor * .5f;               // My best icon image goal - half of the Phone icon scaled to the watch res
+
+//                    int w = Math.round(weatherImage.getWidth()*.5f);
+                    int w = (int) (weatherImage.getWidth() * scale);
+                    h = (int) (weatherImage.getHeight() * scale);
+
+//                    h = Math.round(weatherImage.getHeight()*.5f);
+                    Log.d(TAG, "drawSunshineData() inside image NEW w: " + w + " NEW h: " + h);
 
                     scaledWeatherImage = weatherImage.createScaledBitmap(weatherImage, w, h, false);
                     iLen = scaledWeatherImage.getWidth();
                 }
+//                Log.d(TAG, "drawSunshineData() OUTside image REAL W: " + realWidth + " REAL H: " + realHeight);
 
                 highOnly = sunshineData.getHighOnly()!=null? sunshineData.getHighOnly(): "#2: High";
                 lowOnly = sunshineData.getLowOnly()!=null? sunshineData.getLowOnly(): "#2: Low";
@@ -550,6 +566,16 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                         - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
             }
+        }
+
+        @Override
+        public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            super.onSurfaceChanged(holder, format, width, height);
+
+            realHeight = height;
+            realWidth = width;
+
+            Log.d(TAG, "REAL WIDTH: " + realWidth + " REAL HEIGHT: " + realHeight);
         }
     }
 }
