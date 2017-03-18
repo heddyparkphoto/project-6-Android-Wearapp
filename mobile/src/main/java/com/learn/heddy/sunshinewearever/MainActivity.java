@@ -271,6 +271,7 @@ public class MainActivity extends AppCompatActivity  implements
         mRecyclerView.smoothScrollToPosition(mPosition);
         if (data.getCount() != 0){
             showWeatherDataView();
+            /* invoke WatchFace handling method */
             watchFaceDataForToday(data);
         }
     }
@@ -377,34 +378,75 @@ public class MainActivity extends AppCompatActivity  implements
         return super.onOptionsItemSelected(item);
     }
 
-
     /*
-    Watch Face coding:
+        Watch Face coding:
      */
     private void watchFaceDataForToday(Cursor data){
-        if (data!=null){
-            data.moveToFirst(); // sort order was ASCENDING, Today's data is at the first one
-            int mImageId = data.getInt(INDEX_WEATHER_CONDITION_ID);
-            float weather_high_degree = data.getFloat(INDEX_WEATHER_MAX_TEMP);
-            float weather_low_degree = data.getFloat(INDEX_WEATHER_MIN_TEMP);
-            String mHigh_low = SunshineWeatherUtils.formatHighLows(this,weather_high_degree,weather_low_degree);
-//                    SunshineWeatherUtils.formatTemperature(this,weather_high_degree)
-//                    + " " + SunshineWeatherUtils.formatTemperature(this,weather_low_degree);
 
-            Log.d(TAG, "Sunshine tempatures: High "+weather_high_degree + " Low: "+weather_low_degree);
+        if (data!=null && data.moveToFirst()){ // moveToFirst assuming the ASCENDING sort order resulted today's data at the first
+            // variables to hold new values
+            String location = "";
+            int dateAsInt = 0;
+            boolean metricChosen;
 
-            if (mGoogleApiClient.isConnected()){
-                Log.d(TAG, "google connected");
+            // variables to hold last saved values to compare with new values
+            String saved_location;
+            int saved_dateAsInt;
+            boolean saved_metricChosen;
+
+            boolean isOldData;
+
+            /*
+                We don't want to send Data to the WatchFace if the data are same;
+                the items we want to check against are: the Date, the Location as Text and the isMetric preference.
+                These are saved as SharedPreferences for WatchFace specifically.
+             */
+            saved_location = SunshinePreferences.retrieveWatchFaceLocation(this);
+            saved_dateAsInt = SunshinePreferences.retrieveWatchFaceDateInt(this);
+            saved_metricChosen = SunshinePreferences.retrieveWatchFaceMetricChosen(this);
+
+            location = SunshinePreferences.getPreferredWeatherLocation(this);
+            dateAsInt = data.getInt(INDEX_WEATHER_DATE);
+            metricChosen = SunshinePreferences.isMetric(this);
+
+            // first time with WatchFace, then send data even if the Phone app data has not changed
+            // THIS MAY NEED MORE WORK... is there a way to know if the watch face was chosen
+            // from the Watch?
+            if (saved_dateAsInt == R.integer.wf_default_date) {
+                isOldData = false;
+            } else {
+                isOldData = (saved_dateAsInt == dateAsInt) &&
+                        (saved_location.equalsIgnoreCase(location)) &&
+                        (saved_metricChosen == metricChosen);
             }
 
-            // prep weather image
+            /* All criteria for old data are true, therefore, do not send to the WatchFace
+             * just get out of this method
+             */
+            if (isOldData){
+                Log.d(TAG, "Same old data!");
+                return;
+            } else {
+                Log.d(TAG, "NEW DATA - request DataApi!!");
+
+                /** Don't forget to store the new data on the SharedPreferences */
+                SunshinePreferences.saveWatchFaceData(this, dateAsInt, location, metricChosen);
+            }
+
+            int mImageId = data.getInt(INDEX_WEATHER_CONDITION_ID);
+
+            double high_degree = data.getDouble(INDEX_WEATHER_MAX_TEMP);
+            double low_degree = data.getDouble(INDEX_WEATHER_MIN_TEMP);
+
+            // Match temperatures exactly to the ForecastAdapter values
+            String lowString = SunshineWeatherUtils.formatTemperature(this, low_degree);
+            String highString = SunshineWeatherUtils.formatTemperature(this, high_degree);
+            String mHigh_low = highString + " / " + lowString;
+
+            // prepare weather image
             Resources resources = this.getResources();
             int smallResourceId = SunshineWeatherUtils
                     .getSmallArtResourceIdForWeatherCondition(mImageId);
-
-            Log.d(TAG, "weather_id: " + mImageId + " smallId: "+smallResourceId
-                + " desc " + SunshineWeatherUtils
-                    .getStringForWeatherCondition(this, mImageId));
 
             Bitmap largeIcon = BitmapFactory.decodeResource(
                     resources,

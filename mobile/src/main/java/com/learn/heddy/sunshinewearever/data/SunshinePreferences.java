@@ -227,4 +227,35 @@ public class SunshinePreferences {
         editor.putLong(lastNotificationKey, timeOfNotification);
         editor.apply();
     }
+
+    /**
+     * Convenience methods for WatchFace
+     */
+    public static void saveWatchFaceData(Context context, int dateAsInt, String location, boolean wfunit){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences.Editor editor = sp.edit();
+
+        editor.putString(context.getString(R.string.wf_location_key), location);
+        editor.putInt(context.getString(R.string.wf_date_as_int_key), dateAsInt);
+        editor.putBoolean(context.getString(R.string.wf_ismetric_key), wfunit);
+        editor.apply();
+    }
+
+    public static String retrieveWatchFaceLocation(Context context){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        return sp.getString(context.getString(R.string.wf_location_key), getPreferredWeatherLocation(context));
+    }
+
+    public static int retrieveWatchFaceDateInt(Context context){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        return sp.getInt(context.getString(R.string.wf_date_as_int_key), R.integer.wf_default_date);
+    }
+
+    public static boolean retrieveWatchFaceMetricChosen(Context context){
+        SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);
+
+        return sp.getBoolean(context.getString(R.string.wf_ismetric_key), true);
+    }
 }

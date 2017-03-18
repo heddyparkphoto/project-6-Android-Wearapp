@@ -64,7 +64,7 @@ public class SunshineDataListenerService extends WearableListenerService
                     String high_low = dataMap.getString(HIGH_LOW_KEY);
                     Asset bitmapAsset = dataMapItem.getDataMap()
                             .getAsset(BITMAP_KEY);
-                    LoadBitmapAsyncTask asyncTask = (LoadBitmapAsyncTask)new LoadBitmapAsyncTask().execute(bitmapAsset);
+                    LoadBitmapAsyncTask asyncTask = (LoadBitmapAsyncTask) new LoadBitmapAsyncTask().execute(bitmapAsset);
                     Bitmap weatherImage = null;
                     try {
                         weatherImage = asyncTask.get();
@@ -76,7 +76,10 @@ public class SunshineDataListenerService extends WearableListenerService
                 } else {
                     Log.w(TAG, "Unknown URI path: " + path);
                 }
-            } else {Log.w(TAG, "Unknown event Type = " + event.getType());
+            } else if (event.getType() == DataEvent.TYPE_DELETED){
+                Log.i(TAG, "Sunshine Digital Watch Face uninstalled.");
+            } else {
+                Log.w(TAG, "Other Event Type = " + event.getType());
             }
         }
     }

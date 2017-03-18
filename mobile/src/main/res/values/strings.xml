@@ -244,4 +244,8 @@
         Low:<xliff:g id="low">%3$s</xliff:g>
     </string>
 
+    <!--Preferences keys used by WatchFace methods -->
+    <string name="wf_location_key" translatable="false">wf_location</string>
+    <string name="wf_date_as_int_key" translatable="false">wf_date_as_int</string>
+    <string name="wf_ismetric_key">wf_metric_picked</string>
 </resources>
