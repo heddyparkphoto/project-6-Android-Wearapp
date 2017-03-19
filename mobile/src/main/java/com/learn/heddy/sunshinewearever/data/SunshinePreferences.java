@@ -6,6 +6,10 @@ import android.preference.PreferenceManager;
 
 import com.learn.heddy.sunshinewearever.R;
 
+/*
+ *  Starting with the Udacity starter code,
+ *  added methods for the WatchFace project
+ */
 public class SunshinePreferences {
 
     /*
@@ -229,7 +233,8 @@ public class SunshinePreferences {
     }
 
     /**
-     * Convenience methods for WatchFace
+     * Methods for WatchFace to save and retrieve values that are used
+     * to determine whether or not to send Data to the Watch
      */
     public static void saveWatchFaceData(Context context, int dateAsInt, String location, boolean wfunit){
         SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(context);

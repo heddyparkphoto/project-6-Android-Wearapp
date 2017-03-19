@@ -28,6 +28,10 @@ import android.widget.TextView;
 import com.learn.heddy.sunshinewearever.utilities.SunshineDateUtils;
 import com.learn.heddy.sunshinewearever.utilities.SunshineWeatherUtils;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 public class ForecastAdapter extends RecyclerView.Adapter<ForecastAdapter.ForecastAdapterViewHolder> {
 
     private static final int VIEW_TYPE_TODAY = 0;

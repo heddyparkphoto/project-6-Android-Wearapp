@@ -50,7 +50,14 @@ import com.learn.heddy.sunshinewearever.utilities.SunshineWeatherUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-public class MainActivity extends AppCompatActivity  implements
+/*
+ *  Starting with the Udacity starter code,
+ *  added methods to complete the WatchFace project
+ *
+ *  GoogleApiClient is built and connection is attempted.
+ *  When Load is finished, WatchFace method checks and sends data if data is changed.
+ */
+public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
         ForecastAdapter.ForecastAdapterOnClickHandler {
 
@@ -77,7 +84,6 @@ public class MainActivity extends AppCompatActivity  implements
     public static final int INDEX_WEATHER_MIN_TEMP = 2;
     public static final int INDEX_WEATHER_CONDITION_ID = 3;
 
-
     /*
      * This ID will be used to identify the Loader responsible for loading our weather forecast. In
      * some cases, one Activity can deal with many Loaders. However, in our case, there is only one.
@@ -94,7 +100,8 @@ public class MainActivity extends AppCompatActivity  implements
     private ProgressBar mLoadingIndicator;
 
     /*
-        WatchFace code added by hyeryung park 2/16/2017
+     *  WatchFace code added by hyeryung park 2/16/2017
+     *  These 3 Strings are keys to the Data transfer between Phone and Watch
      */
     private static final String SUNSHINE_PATH = "/sunshinewearever";
 
@@ -179,8 +186,6 @@ public class MainActivity extends AppCompatActivity  implements
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
-//                .addConnectionCallbacks(this)
-//                .addOnConnectionFailedListener(this)
                 .build();
 
         mGoogleApiClient.connect();

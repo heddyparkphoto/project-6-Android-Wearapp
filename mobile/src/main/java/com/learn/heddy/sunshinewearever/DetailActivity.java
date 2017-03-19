@@ -34,6 +34,10 @@ import com.learn.heddy.sunshinewearever.databinding.ActivityDetailBinding;
 import com.learn.heddy.sunshinewearever.utilities.SunshineDateUtils;
 import com.learn.heddy.sunshinewearever.utilities.SunshineWeatherUtils;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 public class DetailActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor> {
 

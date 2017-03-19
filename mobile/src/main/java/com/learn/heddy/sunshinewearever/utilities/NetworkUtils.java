@@ -28,6 +28,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Scanner;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 /**
  * These utilities will be used to communicate with the weather servers.
  */

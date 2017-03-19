@@ -5,6 +5,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import com.learn.heddy.sunshinewearever.data.WeatherContract.WeatherEntry;
 
+
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 public class WeatherDbHelper extends SQLiteOpenHelper {
 
     /*

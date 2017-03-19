@@ -32,6 +32,9 @@ import com.learn.heddy.sunshinewearever.data.WeatherContract;
 
 import java.util.concurrent.TimeUnit;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class SunshineSyncUtils {
 
     /*

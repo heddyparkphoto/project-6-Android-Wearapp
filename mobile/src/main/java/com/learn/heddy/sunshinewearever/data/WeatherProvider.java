@@ -11,6 +11,9 @@ import android.support.annotation.NonNull;
 
 import com.learn.heddy.sunshinewearever.utilities.SunshineDateUtils;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class WeatherProvider extends ContentProvider {
 
     /*

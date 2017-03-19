@@ -21,6 +21,9 @@ package com.learn.heddy.sunshinewearever.sync;
 import android.app.IntentService;
 import android.content.Intent;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class SunshineSyncIntentService extends IntentService {
 
     public SunshineSyncIntentService() {

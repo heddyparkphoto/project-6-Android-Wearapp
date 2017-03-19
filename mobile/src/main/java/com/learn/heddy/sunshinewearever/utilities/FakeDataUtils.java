@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class FakeDataUtils  {
 
     private static int [] weatherIDs = {200,300,500,711,900,962};

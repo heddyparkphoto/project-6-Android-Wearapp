@@ -25,6 +25,10 @@ import static com.learn.heddy.sunshinewearever.SunshineWatchFaceUtil.HIGH_LOW_KE
 
 /**
  * Created by hyeryungpark on 2/16/17.
+ *
+ * This class's onDataChanged() method is called when the Phone sends the weather data
+ * When matching path and keys are found, their values are saved using the
+ * SunshineWatchFaceUtil class for the WatchFace service class to display them
  */
 
 public class SunshineDataListenerService extends WearableListenerService

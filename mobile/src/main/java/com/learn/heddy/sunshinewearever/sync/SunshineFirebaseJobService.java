@@ -21,6 +21,9 @@ import android.os.AsyncTask;
 import com.firebase.jobdispatcher.JobParameters;
 import com.firebase.jobdispatcher.JobService;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class SunshineFirebaseJobService extends JobService {
 
     private AsyncTask<Void, Void, Void> mFetchWeatherTask;

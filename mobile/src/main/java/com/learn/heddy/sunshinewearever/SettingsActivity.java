@@ -19,6 +19,10 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 public class SettingsActivity extends AppCompatActivity {
 
     @Override

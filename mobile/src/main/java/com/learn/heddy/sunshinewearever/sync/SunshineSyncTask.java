@@ -28,6 +28,9 @@ import com.learn.heddy.sunshinewearever.utilities.OpenWeatherJsonUtils;
 
 import java.net.URL;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class SunshineSyncTask {
 
     /**

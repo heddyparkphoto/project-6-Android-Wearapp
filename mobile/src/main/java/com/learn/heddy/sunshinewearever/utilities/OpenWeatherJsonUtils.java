@@ -27,6 +27,10 @@ import org.json.JSONObject;
 
 import java.net.HttpURLConnection;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 /**
  * Utility functions to handle OpenWeatherMap JSON data.
  */

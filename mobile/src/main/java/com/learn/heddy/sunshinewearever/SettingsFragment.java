@@ -28,6 +28,10 @@ import com.learn.heddy.sunshinewearever.data.SunshinePreferences;
 import com.learn.heddy.sunshinewearever.data.WeatherContract;
 import com.learn.heddy.sunshinewearever.sync.SunshineSyncUtils;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
+
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 

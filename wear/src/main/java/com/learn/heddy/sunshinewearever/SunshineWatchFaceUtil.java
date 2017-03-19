@@ -43,15 +43,16 @@ public class SunshineWatchFaceUtil {
         mBitmap = wBitmap;
     }
 
+    // Instantiate as invoked with saved fields on this class
     public static TodayData fetchSunshineData(Context context){
         return new TodayData(mHigh, mLow, mBitmap);
     }
 
+    // Convenience class that holds WatchFace field values
     public static class TodayData {
 
         private String high;
         private String low;
-
         private Bitmap weatherImage;
 
         public TodayData(){

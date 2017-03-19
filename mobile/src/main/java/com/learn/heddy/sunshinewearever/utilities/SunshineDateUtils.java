@@ -24,6 +24,9 @@ import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public final class SunshineDateUtils  {
 
     /* Milliseconds in a day */

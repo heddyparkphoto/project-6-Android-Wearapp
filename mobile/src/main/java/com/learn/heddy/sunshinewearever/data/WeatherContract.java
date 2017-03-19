@@ -5,6 +5,9 @@ import android.provider.BaseColumns;
 
 import com.learn.heddy.sunshinewearever.utilities.SunshineDateUtils;
 
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class WeatherContract {
 
     /*

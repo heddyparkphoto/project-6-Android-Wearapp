@@ -33,6 +33,10 @@ import com.learn.heddy.sunshinewearever.R;
 import com.learn.heddy.sunshinewearever.data.SunshinePreferences;
 import com.learn.heddy.sunshinewearever.data.WeatherContract;
 
+
+/*
+ *  Note: This file is the Udacity starter code as-is
+ */
 public class NotificationUtils {
 
     /*
