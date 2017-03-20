@@ -102,7 +102,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         private int realWidth = DEFAULT_FACE_10;
         private int realHeight = DEFAULT_FACE_10;
 
-        private static final float WEATHER_DATA_TEXT_SIZE = 38f;
+        private static final float WEATHER_DATA_TEXT_SIZE = 54f;
         private final String COLON_STRING = ":";
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
@@ -155,6 +155,12 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         private float m_yLine3;
         private float m_ySixteenth;
 
+        /* new on 3/19 -- */
+        private float weatherCenterBaseY;
+        private float weatherY10thUnit;
+        private float weatherY20thUnit;
+        private float decoDeviderLineHalfLength;
+
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -177,22 +183,22 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mLineHeight = resources.getDimension(R.dimen.digital_line_height);
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.background));
+            mBackgroundPaint.setColor(resources.getColor(R.color.colorPrimary));
 
-            mDatePaint = createTextPaint(resources.getColor(R.color.digital_text));
+            mDatePaint = createTextPaint(resources.getColor(R.color.colorPrimaryLight));
 
-            mHourPaint = createTextPaint(resources.getColor(R.color.digital_text));
-            mMinutePaint = createTextPaint(resources.getColor(R.color.digital_text));
+            mHourPaint = createTextPaint(Color.WHITE);
+            mMinutePaint = createTextPaint(Color.WHITE);
 
             mTextPaint = new Paint();
-            mTextPaint = createTextPaint(resources.getColor(R.color.digital_text));
-            mColonPaint = createTextPaint(resources.getColor(R.color.digital_text));
-            mCenterLine = createLinePaint(resources.getColor(R.color.digital_text));     //mInteractiveMinuteDigitsColor);
+            mTextPaint = createTextPaint(Color.WHITE);
+            mColonPaint = createTextPaint(Color.WHITE);
+            mCenterLine = createLinePaint(resources.getColor(R.color.colorPrimaryLight));     //mInteractiveMinuteDigitsColor);
 
             mCalendar = Calendar.getInstance();
             mDate = new Date();
             initFormats();
-            initializeWeatherGraphics();
+//            initializeWeatherGraphics();
 
         }
 
@@ -201,28 +207,28 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             mDayOfWeekFormat.setCalendar(mCalendar);
         }
 
-        private void initializeWeatherGraphics() {
-//            if (Log.isLoggable(TAG, Log.DEBUG)) {
-            Log.d(TAG, "initializeWeatherGraphics()");
-//            }
-
-            mWeatherDataPaint = new Paint();
-            mWeatherDataPaint.setColor(Color.MAGENTA);
-            mWeatherDataPaint.setTextSize(WEATHER_DATA_TEXT_SIZE);
-//            mWeatherDataPaint.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
-            mWeatherDataPaint.setTypeface(NORMAL_TYPEFACE);
-//            mWeatherDataPaint.setTextAlign(Paint.Align.CENTER);
-            mWeatherDataPaint.setAntiAlias(true);
-
-            mWeatherDataPaintMuted = new Paint();
-            mWeatherDataPaintMuted.setColor(Color.argb(180, 255, 0, 255));
-            mWeatherDataPaintMuted.setTextSize(WEATHER_DATA_TEXT_SIZE);
-//            mWeatherDataPaintMuted.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
-            mWeatherDataPaintMuted.setTypeface(NORMAL_TYPEFACE);
-//            mWeatherDataPaintMuted.setTextAlign(Paint.Align.CENTER);
-            mWeatherDataPaintMuted.setAntiAlias(true);
-
-        }
+//        private void initializeWeatherGraphics() {
+////            if (Log.isLoggable(TAG, Log.DEBUG)) {
+//            Log.d(TAG, "initializeWeatherGraphics()");
+////            }
+//            Resources resources = SunshineWatchFaceService.this.getResources();
+//            mWeatherDataPaint = new Paint();
+//            mWeatherDataPaint.setColor(Color.WHITE);
+//            mWeatherDataPaint.setTextSize(resources.getDimension(R.dimen.weather_data_size));//(WEATHER_DATA_TEXT_SIZE);
+////            mWeatherDataPaint.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+//            mWeatherDataPaint.setTypeface(NORMAL_TYPEFACE);
+////            mWeatherDataPaint.setTextAlign(Paint.Align.CENTER);
+//            mWeatherDataPaint.setAntiAlias(true);
+//
+//            mWeatherDataPaintMuted = new Paint();
+//            mWeatherDataPaintMuted.setColor(resources.getColor(R.color.colorPrimaryLight));
+//            mWeatherDataPaintMuted.setTextSize(WEATHER_DATA_TEXT_SIZE);
+////            mWeatherDataPaintMuted.setTypeface(Typeface.create(Typeface.SERIF, Typeface.ITALIC));
+//            mWeatherDataPaintMuted.setTypeface(NORMAL_TYPEFACE);
+////            mWeatherDataPaintMuted.setTextAlign(Paint.Align.CENTER);
+//            mWeatherDataPaintMuted.setAntiAlias(true);
+//
+//        }
 
         @Override
         public void onDestroy() {
@@ -243,7 +249,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             Paint paint = new Paint();
             paint.setColor(defaultInteractiveColor);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(4f);
+            paint.setStrokeWidth(2f);
             paint.setAntiAlias(true);
             return paint;
         }
@@ -302,13 +308,21 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     ? R.dimen.digital_y_offset_round : R.dimen.digital_y_offset);
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
+            float weatherTextSize = resources.getDimension(isRound
+                    ? R.dimen.weather_data_size_round : R.dimen.weather_data_size);
 
             mDatePaint.setTextSize(resources.getDimension(R.dimen.digital_date_text_size)); // Date has the same size for both insets
+
             mHourPaint.setTextSize(textSize);
             mMinutePaint.setTextSize(textSize);
             mColonPaint.setTextSize(textSize);
-
             mColonWidth = mColonPaint.measureText(COLON_STRING);
+
+            mWeatherDataPaint = createTextPaint(Color.WHITE);
+            mWeatherDataPaint.setTextSize(weatherTextSize);
+
+            mWeatherDataPaintMuted = createTextPaint(resources.getColor(R.color.colorPrimaryLight));
+            mWeatherDataPaintMuted.setTextSize(weatherTextSize);
         }
 
         @Override
@@ -391,8 +405,12 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             float mlen = mMinutePaint.measureText(minuteString);
             m_ySixteenth = mHeight*1/16;
             float yLine1 = mHeight/4+m_ySixteenth;
-            float yLine2 = mHeight*3/8+m_ySixteenth;
-            m_yLine3 = mHeight*3/4; //+ySixteenth;
+//            float yLine2 = mHeight*3/8+m_ySixteenth;
+//            m_yLine3 = mHeight*3/4; //+ySixteenth;
+
+            float yLine2 = weatherCenterBaseY - weatherY10thUnit;
+            m_yLine3 = weatherCenterBaseY + weatherY10thUnit * 2;
+
             String allTime = hourString.concat(COLON_STRING).concat(minuteString);
 
             mHourXoffset = (mWidth - (hlen+clen+mlen))/2;
@@ -412,7 +430,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 //                canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
 //            }
 
-//            canvas.drawText(COLON_STRING, colonXoffset, yLine1, mColonPaint);
+//            canvas.drawText(COLON_STRIN`G, colonXoffset, yLine1, mColonPaint);
 //
 //            x += mColonWidth;
 //            float minuteXoffset = colonXoffset + mColonWidth;
@@ -428,6 +446,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             if (getPeekCardPosition().isEmpty()) {
                 // Day of week
                 String dayString = mDayOfWeekFormat.format(mDate);
+                if (dayString!=null){
+                    dayString = dayString.toUpperCase();
+                }
 
                 mWeatherDataXoffset = (mWidth - mDatePaint.measureText(dayString))/2;
                 canvas.drawText(
@@ -442,7 +463,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 //            mWidth = bounds.width();
 //            mCenterX = mWidth/2f;
             float halfLength = 50f;
-            canvas.drawLine(mCenterX-halfLength, mCenterY, mCenterX+halfLength, mCenterY, mCenterLine);
+            canvas.drawLine(mCenterX-decoDeviderLineHalfLength, weatherCenterBaseY, mCenterX+decoDeviderLineHalfLength, weatherCenterBaseY, mCenterLine);
 
             drawSunshineData(canvas, now);
         }
@@ -459,7 +480,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             int h = 0;
             float iLen = 0f;
-            float spaceLen = 12f;
+            float spaceLen = weatherY20thUnit;//12f;
 
             SunshineWatchFaceUtil.TodayData sunshineData = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
             if (sunshineData!=null) {
@@ -496,18 +517,31 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             float allWeatherLen = iLen
                     + mWeatherDataPaint.measureText(highOnly)
-//                    + mWeatherDataPaintMuted.measureText(lowOnly)
-                    + spaceLen*6
+                    + mWeatherDataPaintMuted.measureText(lowOnly)
+                    - spaceLen*6
                     ;
 
-            mWeatherDataXoffset = (mWidth-allWeatherLen)/2;
+            float mWeatherDataXoffset_old = (mWidth-allWeatherLen)/2;
+
+            float allWeatherLen2 = iLen
+                    + mWeatherDataPaint.measureText(highOnly)
+                    + mWeatherDataPaint.measureText(lowOnly)
+//                    + spaceLen*6
+                    ;
+
+
+            mWeatherDataXoffset = (realWidth-allWeatherLen2)/2 + spaceLen;
+
             Log.d(TAG, "iLen: "+ iLen + " highOnly "+mWeatherDataPaint.measureText(highOnly)+" xOffset " + mWeatherDataXoffset);
 
             if (scaledWeatherImage!=null) {
 //                canvas.drawBitmap(scaledWeatherImage, weatherDataX, mWeatherDataY, null);
 //                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, m_yLine3, null);
-                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, mCenterY+m_ySixteenth, null);
-                mWeatherDataXoffset = mWeatherDataXoffset + spaceLen + scaledWeatherImage.getWidth();
+//                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, mCenterY+m_ySixteenth, null);
+
+                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, weatherCenterBaseY+weatherY20thUnit, null);
+
+                mWeatherDataXoffset = mWeatherDataXoffset + spaceLen/2 + scaledWeatherImage.getWidth();
             }
 
             canvas.drawText(
@@ -525,7 +559,7 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 //                    lowOnly.length(),
 //                    weatherDataX + 60,
 //                    mWeatherDataY,
-                    mWeatherDataXoffset + spaceLen*2 + mWeatherDataPaint.measureText(highOnly)/2,
+                    mWeatherDataXoffset + spaceLen + mWeatherDataPaint.measureText(highOnly)/2,
                     m_yLine3,
                     mWeatherDataPaintMuted);
     }
@@ -576,6 +610,55 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             realWidth = width;
 
             Log.d(TAG, "REAL WIDTH: " + realWidth + " REAL HEIGHT: " + realHeight);
+
+            int topS = holder.getSurfaceFrame().top;
+            int bottomS =  holder.getSurfaceFrame().bottom;
+            int leftS = holder.getSurfaceFrame().left;
+            int rightS = holder.getSurfaceFrame().right;
+            int centerX = holder.getSurfaceFrame().centerX();
+            int centerY = holder.getSurfaceFrame().centerY();
+
+            float centerFx = holder.getSurfaceFrame().exactCenterX();
+
+            float centerFy = holder.getSurfaceFrame().exactCenterY();
+            weatherY10thUnit = height/10f;
+            weatherY20thUnit = height/20f;
+            weatherCenterBaseY = centerFy + weatherY20thUnit;
+
+            decoDeviderLineHalfLength = realWidth * 0.09f;
+
+
+
+
+            Log.d(TAG, "REAL dimens: top: " + topS + " bottom: " + bottomS);
+            Log.d(TAG, "REAL dimens: left: " + leftS + " right: " + rightS);
+            Log.d(TAG, "REAL centerX: " + centerX + " exact Cx " + centerFx);
         }
+//
+//        @Override
+//        public void onSurfaceCreated(SurfaceHolder holder) {
+//            super.onSurfaceCreated(holder);
+//            int topS = holder.getSurfaceFrame().top;
+//            int bottomS =  holder.getSurfaceFrame().bottom;
+//            int leftS = holder.getSurfaceFrame().left;
+//            int rightS = holder.getSurfaceFrame().right;
+//            int centerX = holder.getSurfaceFrame().centerX();
+//            int centerY = holder.getSurfaceFrame().centerY();
+//
+//            float centerFx = holder.getSurfaceFrame().exactCenterX();
+//            float centerFy = holder.getSurfaceFrame().exactCenterY();
+//
+//            Log.d(TAG, "SURFACE holder dimens: top: " + topS + " bottom: " + bottomS);
+//            Log.d(TAG, "SURFACE holder dimens: left: " + leftS + " right: " + rightS);
+//            Log.d(TAG, "SURFACE holder centerX: " + centerX + " exact Cx " + centerFx);
+//        }
     }
+/* *
+Note to the Reviewer
+
+If I used the latest, I am getting connection error on the wearable data listener.
+compile 'com.google.android.gms:play-services-wearable:10.2.0'
+
+SunshineDataListener: Failed to connect to GoogleApiClient.
+*/
 }

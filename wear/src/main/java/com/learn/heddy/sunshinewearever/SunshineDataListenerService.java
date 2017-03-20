@@ -82,6 +82,16 @@ public class SunshineDataListenerService extends WearableListenerService
                 }
             } else if (event.getType() == DataEvent.TYPE_DELETED){
                 Log.i(TAG, "Sunshine Digital Watch Face uninstalled.");
+                /* TO-DO Sample from /WearSample/.../NotificationUpdateService
+                               if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "DataItem deleted: " + dataEvent.getDataItem().getUri().getPath());
+                }
+                if (Constants.BOTH_PATH.equals(dataEvent.getDataItem().getUri().getPath())) {
+                    // Dismiss the corresponding notification
+                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
+                            .cancel(Constants.WATCH_ONLY_ID);
+                }
+                 */
             } else {
                 Log.w(TAG, "Other Event Type = " + event.getType());
             }
