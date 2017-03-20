@@ -8,6 +8,8 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -352,12 +354,15 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             if (isInAmbientMode()){
                 mDatePaint.setColor(COLOR_VALUE_DEFAULT__AMBIENT_GRAY);
+                mCenterLine.setColor(COLOR_VALUE_DEFAULT__AMBIENT_GRAY);
                 mWeatherDataPaintMuted.setColor(COLOR_VALUE_DEFAULT__AMBIENT_GRAY);
             }
             else {
                 Resources resources = SunshineWatchFaceService.this.getResources();
-                mDatePaint.setColor(resources.getColor(R.color.colorPrimaryLight));
-                mWeatherDataPaintMuted.setColor(resources.getColor(R.color.colorPrimaryLight));
+                int ligtBlue = resources.getColor(R.color.colorPrimaryLight);
+                mCenterLine.setColor(ligtBlue);
+                mDatePaint.setColor(ligtBlue);
+                mWeatherDataPaintMuted.setColor(ligtBlue);
             }
 
             if (mLowBitAmbient) {
@@ -582,7 +587,13 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 //                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, m_yLine3, null);
 //                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, mCenterY+m_ySixteenth, null);
 
-                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, weatherCenterBaseY+weatherY20thUnit, null);
+                if (isInAmbientMode()){
+                    Bitmap grayBitmap = buildGrayscaleBitmap(scaledWeatherImage);
+                    canvas.drawBitmap(grayBitmap, mWeatherDataXoffset, weatherCenterBaseY + weatherY20thUnit, null);
+
+                } else {
+                    canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, weatherCenterBaseY + weatherY20thUnit, null);
+                }
 
                 mWeatherDataXoffset = mWeatherDataXoffset + spaceLen/2 + scaledWeatherImage.getWidth();
             }
@@ -605,7 +616,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     mWeatherDataXoffset + spaceLen + mWeatherDataPaint.measureText(highOnly)/2,
                     m_yLine3,
                     mWeatherDataPaintMuted);
+
     }
+
 
         private String formatTwoDigitNumber(int hour) {
             return String.format("%02d", hour);
@@ -660,6 +673,21 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             /* Used to calculate x offset of the decoration horizontal divider line */
             mDecoDeviderLineHalfLength = width * 0.09f;
+        }
+
+        private Bitmap buildGrayscaleBitmap(Bitmap colorBitmap) {
+            Bitmap grayBitmap = Bitmap.createBitmap(
+                    colorBitmap.getWidth(),
+                    colorBitmap.getHeight(),
+                    Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(grayBitmap);
+            Paint grayPaint = new Paint();
+            ColorMatrix colorMatrix = new ColorMatrix();
+            colorMatrix.setSaturation(0);
+            ColorMatrixColorFilter filter = new ColorMatrixColorFilter(colorMatrix);
+            grayPaint.setColorFilter(filter);
+            canvas.drawBitmap(colorBitmap, 0, 0, grayPaint);
+            return grayBitmap;
         }
     }
 /* *
