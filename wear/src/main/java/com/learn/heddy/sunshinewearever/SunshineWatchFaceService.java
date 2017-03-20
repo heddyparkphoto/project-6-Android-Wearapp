@@ -37,6 +37,11 @@ import static android.graphics.Color.parseColor;
  * This class is modeled after Sample project 'WatchFaces'
  * Most closely 'DigitalWatchFaceService'
  * Added Sunshine Weather data components sent from the mobile app
+ *
+ * Also implemented simpler color mode if the watch is in ambient-mode.
+ * Sunshine blue's are switched to black or gray.
+ * Weather icon image is also turned to gray scale using the background image lesson video.
+ *
  */
 /**
  * Digital watch face with seconds. In ambient mode, the seconds aren't displayed. On devices with
@@ -58,11 +63,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
     public static final int COLOR_VALUE_DEFAULT__AMBIENT_GRAY = parseColor(COLOR_NAME_DEFAULT_AMBIENT_GRAY);
 
     /**
-     * Update rate in milliseconds for interactive mode. We update once a second since seconds are
-     * displayed in interactive mode.
-     */
-//    private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1);
-    /**
      * Update rate in milliseconds for normal (not ambient and not mute) mode. We update twice
      * a second to blink the colons.
      */
@@ -76,9 +76,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
      * Handler message id for updating the time periodically in interactive mode.
      */
     private static final int MSG_UPDATE_TIME = 0;
-
-    // Today's weather data variables
-    private static SunshineWatchFaceUtil mSunshineUtil;
 
     @Override
     public Engine onCreateEngine() {
@@ -107,14 +104,13 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
     private class Engine extends CanvasWatchFaceService.Engine {
 
-        private static final float WEATHER_DATA_TEXT_SIZE = 54f;
         private final String COLON_STRING = ":";
         final Handler mUpdateTimeHandler = new EngineHandler(this);
         boolean mRegisteredTimeZoneReceiver = false;
         Paint mBackgroundPaint;
         Paint mTextPaint;
-        boolean mAmbient;
         Calendar mCalendar;
+
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -122,46 +118,33 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 invalidate();
             }
         };
-        float mXOffset;
-        float mYOffset;
+
+        /** used for blinking colon flag */
         boolean mShouldDrawColons;
 
-        /* Additional variables from the WatchFace sample project */
-        Paint mHourPaint;
-        Paint mMinutePaint;
-        Paint mSecondPaint;
-        Paint mColonPaint;
-        float mColonWidth;
+        /** Graphics variables */
+        float mXOffset;
+        float mYOffset;
         private int mWidth;
         private int mHeight;
         private float mCenterX;
         private float mCenterY;
-        private float mLineHeight;
+        float mColonWidth;
 
-        /* Today's weather data graphics */
-        // Sunshine complications
+        Paint mHourPaint;
+        Paint mMinutePaint;
+        Paint mColonPaint;
         Paint mCenterLine;
         Paint mDatePaint;
-        int mWeatherId;
-        int mTodayHigh;
-        int mTodayLow;
+        Paint mWeatherDataPaint;
+        Paint mWeatherDataPaintMuted;
+
         Date mDate;
         SimpleDateFormat mDayOfWeekFormat;
-        java.text.DateFormat mDateFormat;
 
-        private Paint mWeatherDataPaint;
-        private Paint mWeatherDataPaintMuted;
-        private int mWeatherDataY;
-        private int mHorizontalMargin = 15;  //TODO: add to dimens
-
-        /* test better x and y */
+        /* Offset variables that increments at runtime */
         private float mHourXoffset;
-        private float mDateXoffset;
         private float mWeatherDataXoffset;
-        private float m_yLine3;
-        private float m_ySixteenth;
-
-        /* new on 3/19 -- */
         private float weatherCenterBaseY;
         private float weatherY10thUnit;
         private float weatherY20thUnit;
@@ -189,7 +172,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             /* Values from WatchFace sample project */
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
-            mLineHeight = resources.getDimension(R.dimen.digital_line_height);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.colorPrimary));
@@ -307,10 +289,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             Resources resources = SunshineWatchFaceService.this.getResources();
             boolean isRound = insets.isRound();
 
-            mXOffset = resources.getDimension(isRound
-                    ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
-            mYOffset = resources.getDimension(isRound
-                    ? R.dimen.digital_y_offset_round : R.dimen.digital_y_offset);
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
             float weatherTextSize = resources.getDimension(isRound
@@ -335,8 +313,10 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             super.onPropertiesChanged(properties);
 
             // For Sunshine we're always using Light typefaces - so comment this out
-//            boolean burnInProtection = properties.getBoolean(PROPERTY_BURN_IN_PROTECTION, false);
-//            mHourPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
+            /*
+            boolean burnInProtection = properties.getBoolean(PROPERTY_BURN_IN_PROTECTION, false);
+            mHourPaint.setTypeface(burnInProtection ? NORMAL_TYPEFACE : BOLD_TYPEFACE);
+            */
 
             mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
         }
@@ -416,87 +396,37 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             } else {
                 canvas.drawRect(0, 0, bounds.width(), bounds.height(), mBackgroundPaint);
             }
-            //MARCH 20 TH FINAL CLEANUP-BEGIN
-//
-//            mHeight = bounds.height();
-//            mCenterY = mHeight/2f;
-//            mWidth = bounds.width();
-//            mCenterX = mWidth/2f;
-//
-            // Draw H:MM in ambient mode or H:MM:SS in interactive mode.
+
+            // Draw the time with colon in-between
             long now = System.currentTimeMillis();
             mCalendar.setTimeInMillis(now);
             mDate.setTime(now);
-            boolean is24Hour = true;
 
-// START-auto-generated format           String text = mAmbient
-//                    ? String.format("%d:%02d", mCalendar.get(Calendar.HOUR),
-//                    mCalendar.get(Calendar.MINUTE))
-//                    : String.format("%d:%02d:%02d", mCalendar.get(Calendar.HOUR),
-//                    mCalendar.get(Calendar.MINUTE), mCalendar.get(Calendar.SECOND));
-// END-           canvas.drawText(text, mXOffset, mYOffset, mTextPaint);
-
-            // Draw the hours.
-            float x = mXOffset;
-            String hourString;
-            if (is24Hour) {
-                hourString = formatTwoDigitNumber(mCalendar.get(Calendar.HOUR_OF_DAY));
-            } else {
-                int hour = mCalendar.get(Calendar.HOUR);
-                if (hour == 0) {
-                    hour = 12;
-                }
-                hourString = String.valueOf(hour);
-            }
+            String hourString = formatTwoDigitNumber(mCalendar.get(Calendar.HOUR_OF_DAY)); // Sunshine watchface uses 24hour format
             float hlen = mHourPaint.measureText(hourString);
+
             float clen = mColonWidth;
+
             String minuteString = formatTwoDigitNumber(mCalendar.get(Calendar.MINUTE));
             float mlen = mMinutePaint.measureText(minuteString);
-            m_ySixteenth = mHeight*1/16;
-            float yLine1 = mHeight/4+m_ySixteenth;
-//            float yLine2 = mHeight*3/8+m_ySixteenth;
-//            m_yLine3 = mHeight*3/4; //+ySixteenth;
 
-            float yLine2 = weatherCenterBaseY - weatherY10thUnit;
-            m_yLine3 = weatherCenterBaseY + weatherY10thUnit * 2;
-            String allTime = hourString.concat(COLON_STRING).concat(minuteString);
+            float yLine1 = mHeight/4 + weatherY10thUnit;    // Y offset for the time
+            float yLine2 = weatherCenterBaseY - weatherY10thUnit;   // Y offset for the calendar
 
-            mHourXoffset = (mWidth - (hlen+clen+mlen))/2;   // Base x offset for the complete time
-
+            // First X-offset for the time
+            mHourXoffset = (mWidth - (hlen+clen+mlen))/2;
             canvas.drawText(hourString, mHourXoffset, yLine1, mHourPaint);
-            // calculate the new X for the colon
-            mHourXoffset += hlen;
 
-            // blinking effect or if ambient mode where static colon is always drawn
-            // NOTE: We only use the mHourPaint for the all time texts.
+            // increment for the colon
+            mHourXoffset += hlen;
+            // Draw if Ambient mode where static colon is displayed or if the flag is true
             if (isInAmbientMode() || mShouldDrawColons){
                 canvas.drawText(COLON_STRING, mHourXoffset, yLine1, mHourPaint);
             }
-            // calculate the new X for the minute finally!
+
+            // increment for the minute finally!
             mHourXoffset += clen;
             canvas.drawText(minuteString, mHourXoffset, yLine1, mHourPaint);
-
-//            canvas.drawText(hourString, x, mYOffset, mHourPaint);       //mHourPaint);
-//            canvas.drawText(hourString, mHourXoffset, yLine1, mHourPaint);
-            /* NO MORE STATIC COLONS!!!
-            canvas.drawText(allTime, mHourXoffset, yLine1, mHourPaint);
-            */
-            // In ambient and mute modes, always draw the first colon. Otherwise, draw the
-            // first colon for the first half of each second.
-//            if (isInAmbientMode()) {                                   // || mMute || mShouldDrawColons) {
-//                canvas.drawText(COLON_STRING, x, mYOffset, mColonPaint);
-//            }
-
-//            canvas.drawText(COLON_STRIN`G, colonXoffset, yLine1, mColonPaint);
-//
-//            x += mColonWidth;
-//            float minuteXoffset = colonXoffset + mColonWidth;
-
-            // Draw the minutes.
-//            String minuteString = formatTwoDigitNumber(mCalendar.get(Calendar.MINUTE));
-//            canvas.drawText(minuteString, x, mYOffset, mMinutePaint);          //mMinutePaint);
-//            canvas.drawText(minuteString, minuteXoffset, yLine1, mMinutePaint);
-//            x += mMinutePaint.measureText(minuteString);
 
             // Only render the day of week and date if there is no peek card, so they do not bleed
             // into each other in ambient mode.
@@ -513,80 +443,49 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
 
             canvas.drawLine(mCenterX-mDecoDeviderLineHalfLength, weatherCenterBaseY,
                             mCenterX+mDecoDeviderLineHalfLength, weatherCenterBaseY, mCenterLine);
-            drawSunshineData(canvas, now);
+            drawSunshineData(canvas);
         }
 
-
-
-        private void drawSunshineData(Canvas canvas, long currentTimeMillis) {
-            Log.d(TAG, "drawSunshineData()");
-
+        private void drawSunshineData(Canvas canvas) {
             Bitmap weatherImage=null;
             Bitmap scaledWeatherImage = null;
             String highOnly = "High";
             String lowOnly = "Low";
 
-            int h = 0;
+            int h;
+            int w;
             float iLen = 0f;
-            float spaceLen = weatherY20thUnit;//12f;
+            float spaceLen = weatherY20thUnit;  // My design decision of gaps that look nice for the weather data display
+            float yLine3 = weatherCenterBaseY + weatherY10thUnit * 2;
 
             SunshineWatchFaceUtil.TodayData sunshineData = SunshineWatchFaceUtil.fetchSunshineData(getApplicationContext());
             if (sunshineData!=null) {
                 weatherImage = sunshineData.getWeatherImage();
                 if (weatherImage!=null){
-                    Log.d(TAG, "drawSunshineData() inside image REAL W: " + mWidth + " REAL H: " + mHeight);
-                    float resolutionFactor = ((float) mWidth)/280f; // My device width goal of 280dp e.g. 480f/ 280f
-                    float scale = resolutionFactor * .5f;               // My best icon image goal - half of the Phone icon scaled to the watch res
+                    float resolutionFactor = ((float) mWidth)/280f; // My design decision was to base the 280dp screen; e.g. 480f/ 280f
+                    float scale = resolutionFactor * .5f;           // My decision on icon image scale - half of the Phone icon, so .5f
 
-//                    int w = Math.round(weatherImage.getWidth()*.5f);
-                    int w = (int) (weatherImage.getWidth() * scale);
+                    w = (int) (weatherImage.getWidth() * scale);
                     h = (int) (weatherImage.getHeight() * scale);
-
-//                    h = Math.round(weatherImage.getHeight()*.5f);
-                    Log.d(TAG, "drawSunshineData() inside image NEW w: " + w + " NEW h: " + h);
 
                     scaledWeatherImage = weatherImage.createScaledBitmap(weatherImage, w, h, false);
                     iLen = scaledWeatherImage.getWidth();
                 }
-//                Log.d(TAG, "drawSunshineData() OUTside image REAL W: " + realWidth + " REAL H: " + realHeight);
 
-                highOnly = sunshineData.getHighOnly()!=null? sunshineData.getHighOnly(): "#2: High";
-                lowOnly = sunshineData.getLowOnly()!=null? sunshineData.getLowOnly(): "#2: Low";
+                highOnly = sunshineData.getHighOnly()!=null? sunshineData.getHighOnly(): "Today's High";
+                lowOnly = sunshineData.getLowOnly()!=null? sunshineData.getLowOnly(): " Low";
            }
-
-            int weatherDataX = 100;    // TO-DO: better adjust later!
-
-            mWeatherDataY = mHorizontalMargin*2 + new Float(mCenterY).intValue();
-
-//            float allWeatherLen = iLen
-//                    + mWeatherDataPaint.measureText(highOnly)
-//                    + mWeatherDataPaintMuted.measureText(lowOnly)
-//                    ;
 
             float allWeatherLen = iLen
                     + mWeatherDataPaint.measureText(highOnly)
-                    + mWeatherDataPaintMuted.measureText(lowOnly)
-                    - spaceLen*6
-                    ;
-
-            float mWeatherDataXoffset_old = (mWidth-allWeatherLen)/2;
-
-            float allWeatherLen2 = iLen
-                    + mWeatherDataPaint.measureText(highOnly)
-                    + mWeatherDataPaint.measureText(lowOnly)
-//                    + spaceLen*6
-                    ;
+                    + mWeatherDataPaint.measureText(lowOnly);
 
 
-            mWeatherDataXoffset = (mWidth-allWeatherLen2)/2 + spaceLen;
+            mWeatherDataXoffset = (mWidth-allWeatherLen)/2 + spaceLen;
 
             Log.d(TAG, "iLen: "+ iLen + " highOnly "+mWeatherDataPaint.measureText(highOnly)+" xOffset " + mWeatherDataXoffset);
 
             if (scaledWeatherImage!=null) {
-//                canvas.drawBitmap(scaledWeatherImage, weatherDataX, mWeatherDataY, null);
-//                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, m_yLine3, null);
-//                canvas.drawBitmap(scaledWeatherImage, mWeatherDataXoffset, mCenterY+m_ySixteenth, null);
-
                 if (isInAmbientMode()){
                     Bitmap grayBitmap = buildGrayscaleBitmap(scaledWeatherImage);
                     canvas.drawBitmap(grayBitmap, mWeatherDataXoffset, weatherCenterBaseY + weatherY20thUnit, null);
@@ -598,27 +497,12 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 mWeatherDataXoffset = mWeatherDataXoffset + spaceLen/2 + scaledWeatherImage.getWidth();
             }
 
-            canvas.drawText(
-                    highOnly,
-//                    0,
-//                    highOnly.length(),
-                    mWeatherDataXoffset,
-//                    mWeatherDataY += h/2,
-                    m_yLine3,
-                    mWeatherDataPaint);
-
-            canvas.drawText(
-                    lowOnly,
-//                    0,
-//                    lowOnly.length(),
-//                    weatherDataX + 60,
-//                    mWeatherDataY,
+            canvas.drawText(highOnly, mWeatherDataXoffset, yLine3, mWeatherDataPaint);
+            canvas.drawText(lowOnly,
                     mWeatherDataXoffset + spaceLen + mWeatherDataPaint.measureText(highOnly)/2,
-                    m_yLine3,
+                    yLine3,
                     mWeatherDataPaintMuted);
-
     }
-
 
         private String formatTwoDigitNumber(int hour) {
             return String.format("%02d", hour);
@@ -652,10 +536,19 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                 long timeMs = System.currentTimeMillis();
                 long delayMs = mInteractiveUpdateRateMs - (timeMs % mInteractiveUpdateRateMs);
                 mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
-                Log.v(TAG, "sendEmptyMessageDelayed: "+delayMs+" now at: "+timeMs);
             }
         }
 
+        /**
+         *  VERY IMPORTANT Callback where we are using the realtime width and height
+         *  to set the base mHeight, mWidth and mCenterX that many offsets are calculated throughout
+         *  onDraw() and drawSunshineData()
+         *
+         * @param holder
+         * @param format
+         * @param width
+         * @param height
+         */
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             super.onSurfaceChanged(holder, format, width, height);
@@ -671,7 +564,9 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             weatherY20thUnit = height/20f;
             weatherCenterBaseY = mCenterY + weatherY20thUnit;
 
-            /* Used to calculate x offset of the decoration horizontal divider line */
+            /* Used to calculate x offset of the decoration horizontal divider line
+            *  We'd like the length to be 0.18 of the width, therefore x-offset is the half of that 0.09f.
+            * */
             mDecoDeviderLineHalfLength = width * 0.09f;
         }
 
