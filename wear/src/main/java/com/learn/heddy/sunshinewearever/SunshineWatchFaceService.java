@@ -123,8 +123,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
         boolean mShouldDrawColons;
 
         /** Graphics variables */
-        float mXOffset;
-        float mYOffset;
         private int mWidth;
         private int mHeight;
         private float mCenterX;
@@ -169,9 +167,6 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
                     .setShowSystemUiTime(false)
                     .build());
             Resources resources = SunshineWatchFaceService.this.getResources();
-
-            /* Values from WatchFace sample project */
-            mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
             mBackgroundPaint = new Paint();
             mBackgroundPaint.setColor(resources.getColor(R.color.colorPrimary));

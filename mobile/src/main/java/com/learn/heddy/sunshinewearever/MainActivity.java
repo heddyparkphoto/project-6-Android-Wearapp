@@ -52,10 +52,11 @@ import java.io.IOException;
 
 /*
  *  Starting with the Udacity starter code,
- *  added methods to complete the WatchFace project
+ *  added methods to complete the WatchFace project as below:
  *
- *  GoogleApiClient is built and connection is attempted.
- *  When Load is finished, WatchFace method checks and sends data if data is changed.
+ *  1.  GoogleApiClient is built and connection is attempted during onCreate()
+ *  2.  Sending Data is invokded after Load is finished inside the onLoadFinished()
+ *
  */
 public class MainActivity extends AppCompatActivity implements
         LoaderManager.LoaderCallbacks<Cursor>,
@@ -297,11 +298,11 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     /* *
-     * This method is for responding to clicks from our list.
-     *
-     * @param date Normalized UTC time that represents the local date of the weather in GMT time.
-     * @see WeatherContract.WeatherEntry#COLUMN_DATE
-     */
+         * This method is for responding to clicks from our list.
+         *
+         * @param date Normalized UTC time that represents the local date of the weather in GMT time.
+         * @see WeatherContract.WeatherEntry#COLUMN_DATE
+         */
     @Override
     public void onClick(long date) {
         Intent weatherDetailIntent = new Intent(MainActivity.this, DetailActivity.class);
@@ -425,15 +426,13 @@ public class MainActivity extends AppCompatActivity implements
                         (saved_metricChosen == metricChosen);
             }
 
+            if (isOldData){
             /* All criteria for old data are true, therefore, do not send to the WatchFace
              * just get out of this method
              */
-            if (isOldData){
-                Log.d(TAG, "Same old data!");
                 return;
             } else {
-                Log.d(TAG, "NEW DATA - request DataApi!!");
-
+                /* New data, continue....   */
                 /** Don't forget to store the new data on the SharedPreferences */
                 SunshinePreferences.saveWatchFaceData(this, dateAsInt, location, metricChosen);
             }
@@ -443,9 +442,10 @@ public class MainActivity extends AppCompatActivity implements
             double high_degree = data.getDouble(INDEX_WEATHER_MAX_TEMP);
             double low_degree = data.getDouble(INDEX_WEATHER_MIN_TEMP);
 
-            // Match temperatures exactly to the ForecastAdapter values
+            // Match temperature texts exactly to the Phone display values on the DataMap
             String lowString = SunshineWeatherUtils.formatTemperature(this, low_degree);
             String highString = SunshineWeatherUtils.formatTemperature(this, high_degree);
+            // Convenience delimeter.  WatchFace-side code knows it and separate the high and low
             String mHigh_low = highString + " / " + lowString;
 
             // prepare weather image

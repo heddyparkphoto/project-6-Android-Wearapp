@@ -38,7 +38,6 @@ public class SunshineDataListenerService extends WearableListenerService
 
     @Override
     public void onDataChanged(DataEventBuffer dataEventBuffer) {
-        Log.d(TAG, "onDataChanged: " + dataEventBuffer);
 
         final List<DataEvent> freezableLocalizedData = FreezableUtils
                 .freezeIterable(dataEventBuffer);
@@ -53,13 +52,9 @@ public class SunshineDataListenerService extends WearableListenerService
         if (!connectionResult.isSuccess()) {
             Log.e(TAG, "Failed to connect to GoogleApiClient.");
             return;
-        } else {
-            Log.d(TAG, "Success: connected to GoogleApiClient.");
         }
 
         for (DataEvent event : freezableLocalizedData) {
-            Log.d(TAG, "onDataChanged(): event not empty?? " + dataEventBuffer);
-
             if (event.getType() == DataEvent.TYPE_CHANGED) {
                 String path = event.getDataItem().getUri().getPath();
                 if (SunshineWatchFaceUtil.PATH_SUNSHINE_WALLPAPER.equals(path)) {
@@ -76,24 +71,15 @@ public class SunshineDataListenerService extends WearableListenerService
                         Log.e(TAG, " LoadBitmapAsyncTask async task exception " + allEx);
                     }
 
+                    // Save values for the drawing methods
                     SunshineWatchFaceUtil.setTodayData(high_low, weatherImage);
                 } else {
                     Log.w(TAG, "Unknown URI path: " + path);
                 }
             } else if (event.getType() == DataEvent.TYPE_DELETED){
-                Log.i(TAG, "Sunshine Digital Watch Face uninstalled.");
-                /* TO-DO Sample from /WearSample/.../NotificationUpdateService
-                               if (Log.isLoggable(TAG, Log.DEBUG)) {
-                    Log.d(TAG, "DataItem deleted: " + dataEvent.getDataItem().getUri().getPath());
-                }
-                if (Constants.BOTH_PATH.equals(dataEvent.getDataItem().getUri().getPath())) {
-                    // Dismiss the corresponding notification
-                    ((NotificationManager) getSystemService(NOTIFICATION_SERVICE))
-                            .cancel(Constants.WATCH_ONLY_ID);
-                }
-                 */
+                Log.i(TAG, "Event Type: DELETE received.");
             } else {
-                Log.w(TAG, "Other Event Type = " + event.getType());
+                Log.w(TAG, "Other Event Type " + event.getType() + " received.");
             }
         }
     }
