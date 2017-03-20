@@ -580,12 +580,4 @@ public class SunshineWatchFaceService extends CanvasWatchFaceService {
             return grayBitmap;
         }
     }
-/* *
-Note to the Reviewer
-
-If I used the latest, I am getting connection error on the wearable data listener.
-compile 'com.google.android.gms:play-services-wearable:10.2.0'
-
-SunshineDataListener: Failed to connect to GoogleApiClient.
-*/
 }
